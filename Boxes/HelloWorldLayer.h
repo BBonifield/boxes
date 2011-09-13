@@ -13,6 +13,8 @@
 // HelloWorldLayer
 @interface HelloWorldLayer : CCLayer
 {
+    CCSprite *_hero;
+    float _rate;
 }
 
 // returns a CCScene that contains the HelloWorldLayer as the only child

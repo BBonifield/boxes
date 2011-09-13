@@ -34,20 +34,56 @@
 	// always call "super" init
 	// Apple recommends to re-assign "self" with the "super" return value
 	if( (self=[super init])) {
-		
-		// create and initialize a Label
-		CCLabelTTF *label = [CCLabelTTF labelWithString:@"Hello World" fontName:@"Marker Felt" fontSize:64];
-
-		// ask director the the window size
-		CGSize size = [[CCDirector sharedDirector] winSize];
-	
-		// position the label on the center of the screen
-		label.position =  ccp( size.width /2 , size.height/2 );
-		
-		// add the label as a child to this Layer
-		[self addChild: label];
+        [self setIsAccelerometerEnabled:YES];
+        [[UIAccelerometer sharedAccelerometer] setUpdateInterval:1/60];
+        [self scheduleUpdate];
+        
+        _hero = [CCSprite spriteWithFile:@"hero.png"];
+        CGSize frame = [[CCDirector sharedDirector] winSize];
+        [_hero setPosition:ccp(frame.width/2, 30)];
+        
+        [self addChild:_hero];
+        
+        __block CCSprite *box = [CCSprite spriteWithFile:@"box-100x100.png"];
+        [box setPosition:ccp(frame.width/4*3, frame.height-30)];
+        
+        [self addChild:box];
+        
+        
+        CCMoveTo *move = [CCMoveTo actionWithDuration:2.0 position:ccp(frame.width/4*3, -box.contentSize.height/2)];
+        CCCallFunc *func = [CCCallBlock actionWithBlock:^{
+            [self removeChild:box cleanup:YES];
+        }];
+        
+        [box runAction:[CCSequence actions:move, func, nil]];
 	}
 	return self;
+}
+
+- (void) accelerometer:(UIAccelerometer *)accelerometer didAccelerate:(UIAcceleration *)acceleration {
+    Float32 accelarationFraction = acceleration.x * 6;
+    if (accelarationFraction < -1) {
+        accelarationFraction = -1;
+    } else if (accelarationFraction > 1) {
+        accelarationFraction = 1;
+    }
+    _rate = accelarationFraction;
+}
+
+- (void) update:(ccTime)deltaTime {
+    CGPoint curPosition = _hero.position;
+    if (curPosition.x <= 0 && _rate < 0) {
+        return;
+    } else if (curPosition.x >= [[CCDirector sharedDirector] winSize].width && _rate > 0) {
+        return;
+    }
+    
+    float moveBy = 8 * pow(_rate, 3);
+    if (abs(moveBy) < 0.05) {
+        moveBy = 0;
+    }
+    curPosition.x += moveBy;
+    [_hero setPosition:curPosition];
 }
 
 // on "dealloc" you need to release all your retained objects
